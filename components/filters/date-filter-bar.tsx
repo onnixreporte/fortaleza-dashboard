@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { type DatePreset, PRESET_LABELS } from "@/lib/date-filters";
@@ -18,9 +20,20 @@ export function DateFilterBar({
   selected,
   onChange,
   loading,
-  customFrom,
-  customTo,
+  customFrom = "",
+  customTo = "",
 }: DateFilterBarProps) {
+  const [localFrom, setLocalFrom] = useState(customFrom);
+  const [localTo, setLocalTo] = useState(customTo);
+
+  const canApply = !!localFrom && !!localTo;
+
+  const applyCustomFilter = () => {
+    if (canApply) {
+      onChange("custom", localFrom, localTo);
+    }
+  };
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       {presets.map((preset) => (
@@ -29,7 +42,13 @@ export function DateFilterBar({
           variant={selected === preset ? "default" : "outline"}
           size="sm"
           disabled={loading}
-          onClick={() => onChange(preset, customFrom, customTo)}
+          onClick={() => {
+            if (preset !== "custom") {
+              onChange(preset);
+            } else if (selected !== "custom") {
+              onChange("custom", "", "");
+            }
+          }}
         >
           {PRESET_LABELS[preset]}
         </Button>
@@ -39,18 +58,28 @@ export function DateFilterBar({
           <Input
             type="datetime-local"
             className="h-8 text-xs"
-            value={customFrom || ""}
-            onChange={(e) => onChange("custom", e.target.value, customTo)}
+            value={localFrom}
+            onChange={(e) => setLocalFrom(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && applyCustomFilter()}
             disabled={loading}
           />
           <span className="text-sm text-muted-foreground">a</span>
           <Input
             type="datetime-local"
             className="h-8 text-xs"
-            value={customTo || ""}
-            onChange={(e) => onChange("custom", customFrom, e.target.value)}
+            value={localTo}
+            onChange={(e) => setLocalTo(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && applyCustomFilter()}
             disabled={loading}
           />
+          <Button
+            size="sm"
+            disabled={loading || !canApply}
+            onClick={applyCustomFilter}
+          >
+            <Search className="mr-2 h-4 w-4" />
+            Filtrar
+          </Button>
         </div>
       )}
     </div>

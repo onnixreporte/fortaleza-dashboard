@@ -158,8 +158,8 @@ export default function ConversacionesPage() {
     (preset: DatePreset, from?: string, to?: string) => {
       setDatePreset(preset);
       if (preset === "custom") {
-        if (from !== undefined) setCustomFrom(from);
-        if (to !== undefined) setCustomTo(to);
+        setCustomFrom(from ?? "");
+        setCustomTo(to ?? "");
       }
     },
     [],
