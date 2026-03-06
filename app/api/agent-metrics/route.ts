@@ -1,0 +1,54 @@
+import { NextRequest, NextResponse } from "next/server";
+
+const BOTMAKER_URL = "https://api.botmaker.com/v2.0/dashboards/agent-metrics";
+const ALLOWED_PARAMS = ["from", "to", "session-status"] as const;
+
+export async function GET(request: NextRequest) {
+  const token = process.env.BOTMAKER_ACCESS_TOKEN;
+  if (!token) {
+    return NextResponse.json(
+      { error: "BOTMAKER_ACCESS_TOKEN is not configured" },
+      { status: 500 },
+    );
+  }
+
+  const { searchParams } = new URL(request.url);
+  const nextPageEncoded = searchParams.get("nextPage");
+
+  const url = nextPageEncoded
+    ? decodeURIComponent(nextPageEncoded)
+    : (() => {
+        const u = new URL(BOTMAKER_URL);
+        for (const key of ALLOWED_PARAMS) {
+          const value = searchParams.get(key);
+          if (value != null && value !== "") {
+            const normalized =
+              (key === "from" || key === "to")
+                ? value.replace(/(?<!\.\d{3})Z$/, ".000Z")
+                : value;
+            u.searchParams.set(key, normalized);
+          }
+        }
+        return u.toString();
+      })();
+
+  try {
+    const res = await fetch(url, {
+      headers: { Accept: "application/json", "access-token": token },
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      return NextResponse.json(
+        { error: `Botmaker API error: ${res.status}`, details: text },
+        { status: res.status >= 500 ? 502 : res.status },
+      );
+    }
+    return NextResponse.json(await res.json());
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json(
+      { error: "Failed to fetch", details: message },
+      { status: 502 },
+    );
+  }
+}
