@@ -25,7 +25,8 @@ export function exportToCsv<T>(data: T[], filename: string, columns?: { key: key
   }
 
   const csvString = csvRows.join("\n");
-  const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+  const BOM = "\uFEFF"; // UTF-8 BOM para que Excel reconozca correctamente acentos y ñ
+  const blob = new Blob([BOM + csvString], { type: "text/csv;charset=utf-8;" });
   
   const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
